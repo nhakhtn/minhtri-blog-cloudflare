@@ -1,0 +1,32 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  // Tên Worker; site sẽ chạy ở https://<tên>.<tài-khoản>.workers.dev
+  "name": "minhtri-blog",
+  "main": "src/index.tsx",
+  "compatibility_date": "2026-10-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "observability": { "enabled": true },
+
+  // Mã bản deploy: dùng làm khoá cache trang và số phiên bản CSS
+  "version_metadata": { "binding": "CF_VERSION_METADATA" },
+
+  // File tĩnh trong ./public (css, js, favicon)
+  "assets": { "directory": "./public", "binding": "ASSETS" },
+
+  "vars": {
+    // Tên mặc định; đổi được trong Quản trị → Cài đặt site
+    "SITE_NAME": "Blog của tôi",
+    // Tên miền chính, vd. "https://tenmien.com". Để trống: tự lấy theo địa chỉ đang truy cập
+    "SITE_URL": "",
+    // Mã xác minh Google Search Console (thẻ meta), để trống nếu xác minh qua DNS
+    "GOOGLE_SITE_VERIFICATION": "",
+    // Tên miền gắn với kho ảnh R2, vd. "https://anh.tenmien.com". Để trống: ảnh đi qua /media của Worker
+    "MEDIA_BASE": ""
+  },
+
+  // Nút "Deploy to Cloudflare" tự tạo D1, R2, KV và điền mã ID
+  "d1_databases": [{ "binding": "DB", "database_name": "minhtri-blog-db", "migrations_dir": "migrations" }],
+  "r2_buckets": [{ "binding": "MEDIA", "bucket_name": "minhtri-blog-media" }],
+  // KV chỉ dùng để đếm số lần đăng nhập sai
+  "kv_namespaces": [{ "binding": "CACHE" }]
+}
