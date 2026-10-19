@@ -1,3 +1,5 @@
+import type { Context } from 'hono'
+import type { AppEnv } from '../types'
 import type { Post } from './db'
 import { mediaUrl } from './format'
 import type { SiteConfig } from './site-config'
@@ -5,9 +7,8 @@ import { phoneIntl } from './site-config'
 
 export type Crumb = { name: string; path: string }
 
-/** Địa chỉ gốc của site: biến SITE_URL, để trống thì lấy theo địa chỉ đang truy cập (vd. <tên>.workers.dev) */
-export const siteOrigin = (c: { env: { SITE_URL?: string }; req: { url: string } }) =>
-  c.env.SITE_URL ? c.env.SITE_URL.replace(/\/+$/, '') : new URL(c.req.url).origin
+/** Địa chỉ gốc của site: tên miền chính đã cài đặt, không có thì theo địa chỉ đang truy cập (vd. <tên>.workers.dev) */
+export const siteOrigin = (c: Context<AppEnv>) => c.get('early').siteUrl || new URL(c.req.url).origin
 
 export const absoluteUrl = (siteUrl: string, path: string) => new URL(path, siteUrl).toString()
 

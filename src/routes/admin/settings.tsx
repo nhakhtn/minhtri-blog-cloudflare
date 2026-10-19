@@ -1,12 +1,19 @@
 import { Hono } from 'hono'
 import { marked } from 'marked'
 import { setSettings } from '../../lib/auth'
+import { optionalEnv } from '../../lib/early-settings'
 import { mediaUrl } from '../../lib/format'
 import type { SiteConfig } from '../../lib/site-config'
 import { faviconUrl, getSiteConfig } from '../../lib/site-config'
 import { AdminShell, readForm } from './ui'
 
 const app = new Hono<{ Bindings: CloudflareBindings }>()
+
+const envLock = (env: CloudflareBindings): EnvLock => ({
+  siteUrl: optionalEnv(env, 'SITE_URL'),
+  mediaBase: optionalEnv(env, 'MEDIA_BASE'),
+  google: optionalEnv(env, 'GOOGLE_SITE_VERIFICATION'),
+})
 const BASE = '/quan-tri/cai-dat'
 
 // Ô chọn ảnh từ R2: ô key + nút tải lên + ảnh xem trước
@@ -30,7 +37,12 @@ const ImageField = (props: { name: string; label: string; value: string; preview
   </>
 )
 
-const SettingsForm = ({ site }: { site: SiteConfig }) => (
+type EnvLock = { siteUrl: string; mediaBase: string; google: string }
+
+const EnvNote = ({ value }: { value: string }) =>
+  value ? <small class="muted">Đang đặt cố định trong wrangler.jsonc: {value} (ô này không có tác dụng)</small> : null
+
+const SettingsForm = ({ site, env }: { site: SiteConfig; env: EnvLock }) => (
   <form method="post" action={BASE} class="form admin-form-wide">
     <fieldset class="admin-fieldset">
       <legend>Thông tin chung</legend>
@@ -169,6 +181,26 @@ const SettingsForm = ({ site }: { site: SiteConfig }) => (
       </label>
     </fieldset>
 
+    <fieldset class="admin-fieldset">
+      <legend>Tên miền &amp; Google</legend>
+      <label>
+        Tên miền chính, vd. https://tenmien.com (gắn tên miền vào Worker trong Cloudflare trước; để trống = theo địa chỉ
+        đang truy cập)
+        <input name="site_url" type="url" maxlength={200} value={site.site_url} placeholder="https://tenmien.com" />
+        <EnvNote value={env.siteUrl} />
+      </label>
+      <label>
+        Tên miền ảnh, vd. https://anh.tenmien.com (gắn vào kho ảnh R2 trước; để trống = ảnh đi qua Worker)
+        <input name="media_base" type="url" maxlength={200} value={site.media_base} placeholder="https://anh.tenmien.com" />
+        <EnvNote value={env.mediaBase} />
+      </label>
+      <label>
+        Mã xác minh Google Search Console (phần content của thẻ meta google-site-verification)
+        <input name="google_verification" maxlength={200} value={site.google_verification} />
+        <EnvNote value={env.google} />
+      </label>
+    </fieldset>
+
     <div class="form-actions">
       <button class="btn" type="submit">
         Lưu cài đặt
@@ -184,7 +216,7 @@ app.get('/', async (c) => {
   const site = await getSiteConfig(c.env.DB, c.env.SITE_NAME)
   return c.render(
     <AdminShell title="Cài đặt site" active={BASE} flash={c.req.query('ok')}>
-      <SettingsForm site={site} />
+      <SettingsForm site={site} env={envLock(c.env)} />
     </AdminShell>,
     { title: 'Quản trị: Cài đặt site', noindex: true }
   )
@@ -222,6 +254,9 @@ app.post('/', async (c) => {
     contact_intro_md,
     contact_intro_html: contact_intro_md ? await marked.parse(contact_intro_md) : '',
     contact_form: f.bool('contact_form') ? '1' : '0',
+    site_url: f.s('site_url').replace(/\/+$/, ''),
+    media_base: f.s('media_base').replace(/\/+$/, ''),
+    google_verification: f.s('google_verification'),
   }
   const error = !values.name
     ? 'Vui lòng nhập tên trang web.'
@@ -231,13 +266,15 @@ app.post('/', async (c) => {
         ? 'Email không hợp lệ.'
         : values.facebook && !/^https:\/\//.test(values.facebook)
           ? 'Link Facebook phải bắt đầu bằng https://'
-          : undefined
+          : [values.site_url, values.media_base].some((u) => u && !/^https:\/\/[a-z0-9.-]+\.[a-z]{2,}$/i.test(u))
+            ? 'Tên miền phải có dạng https://tenmien.com (không có đường dẫn phía sau).'
+            : undefined
   if (error) {
     c.status(400)
     const site = { ...(await getSiteConfig(c.env.DB, c.env.SITE_NAME)), ...values } as SiteConfig
     return c.render(
       <AdminShell title="Cài đặt site" active={BASE} error={error}>
-        <SettingsForm site={site} />
+        <SettingsForm site={site} env={envLock(c.env)} />
       </AdminShell>,
       { title: 'Quản trị: Cài đặt site', noindex: true }
     )

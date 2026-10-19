@@ -29,6 +29,9 @@ export type SiteConfig = {
   contact_form: string
   shop_name: string
   products_intro: string
+  site_url: string
+  media_base: string
+  google_verification: string
 }
 
 export const DEFAULT_SITE_CONFIG: Omit<SiteConfig, 'name'> = {
@@ -60,6 +63,9 @@ export const DEFAULT_SITE_CONFIG: Omit<SiteConfig, 'name'> = {
   contact_form: '1',
   shop_name: '',
   products_intro: 'Các sản phẩm được chúng tôi lựa chọn.',
+  site_url: '',
+  media_base: '',
+  google_verification: '',
 }
 
 export const SITE_CONFIG_KEYS = ['name', ...Object.keys(DEFAULT_SITE_CONFIG)] as (keyof SiteConfig)[]

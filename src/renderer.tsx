@@ -3,6 +3,7 @@ import { jsxRenderer } from 'hono/jsx-renderer'
 import type { SeoProps } from './components/Layout'
 import { Layout } from './components/Layout'
 import { listNavCategories, listNavPages } from './lib/db'
+import { optionalEnv } from './lib/early-settings'
 import { breadcrumbJsonLd, organizationJsonLd, siteOrigin, websiteJsonLd } from './lib/seo'
 import { DEFAULT_SITE_CONFIG, faviconUrl, getSiteConfig } from './lib/site-config'
 import type { AppEnv } from './types'
@@ -42,7 +43,7 @@ export const renderer = jsxRenderer<AppEnv>(
         site={site}
         siteUrl={SITE_URL}
         path={new URL(c.req.url).pathname}
-        googleVerification={c.env.GOOGLE_SITE_VERIFICATION}
+        googleVerification={optionalEnv(c.env, 'GOOGLE_SITE_VERIFICATION') || site.google_verification}
         assetVersion={c.env.CF_VERSION_METADATA?.id.slice(0, 8) ?? 'dev'}
         nav={c.get('nav') ?? { postCategories: [], pages: [] }}
       >

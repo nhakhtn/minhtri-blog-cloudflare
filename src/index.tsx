@@ -2,7 +2,8 @@ import { Hono } from 'hono'
 import { secureHeaders } from 'hono/secure-headers'
 import { listNavCategories, listPosts, listPublishedPages, recordProductClick } from './lib/db'
 import { getSetting } from './lib/auth'
-import { mediaUrl, setMediaBase } from './lib/format'
+import { loadEarlySettings } from './lib/early-settings'
+import { mediaUrl } from './lib/format'
 import { pageCache } from './lib/page-cache'
 import { isoDate, siteOrigin } from './lib/seo'
 import { loadNav, renderer } from './renderer'
@@ -17,18 +18,16 @@ import type { AppEnv } from './types'
 
 const app = new Hono<AppEnv>()
 
-app.use(async (c, next) => {
-  setMediaBase(c.env.MEDIA_BASE)
-  await next()
-})
+app.use(loadEarlySettings)
 
 // Chuẩn hoá về một địa chỉ duy nhất: https + tên miền chính (không www).
 // Giao thức của khách lấy từ header CF-Visitor do Cloudflare gắn; wrangler dev
 // không có header này nên không bị chuyển hướng.
 app.use(async (c, next) => {
-  if (!c.env.SITE_URL) return next()
+  const { siteUrl } = c.get('early')
+  if (!siteUrl) return next()
   const url = new URL(c.req.url)
-  const canonical = new URL(c.env.SITE_URL)
+  const canonical = new URL(siteUrl)
   const isHttp = c.req.header('cf-visitor')?.includes('"scheme":"http"') ?? false
   if (url.hostname === `www.${canonical.hostname}` || (url.hostname === canonical.hostname && isHttp)) {
     url.protocol = canonical.protocol

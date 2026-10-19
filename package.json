@@ -33,15 +33,6 @@
       },
       "SITE_NAME": {
         "description": "Tên blog (đổi được sau trong Quản trị → Cài đặt site)."
-      },
-      "SITE_URL": {
-        "description": "Để trống. Khi gắn tên miền riêng thì điền, vd. `https://tenmien.com`."
-      },
-      "MEDIA_BASE": {
-        "description": "Để trống. Khi gắn tên miền cho kho ảnh R2 thì điền, vd. `https://anh.tenmien.com`."
-      },
-      "GOOGLE_SITE_VERIFICATION": {
-        "description": "Để trống, hoặc mã xác minh Google Search Console (thẻ meta)."
       }
     }
   }

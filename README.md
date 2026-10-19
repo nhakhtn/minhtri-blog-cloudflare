@@ -23,7 +23,7 @@ Cần: tài khoản [Cloudflare](https://dash.cloudflare.com/sign-up) (miễn ph
 
 1. Bấm nút **Deploy to Cloudflare** ở trên, đăng nhập Cloudflare và kết nối GitHub.
 2. Đặt tên cho dự án (vd. `blog-cua-toi`). Cloudflare tự tạo cơ sở dữ liệu D1, kho ảnh R2, KV và một repo GitHub mới là bản sao của mã nguồn này.
-3. Ở ô **SETUP_TOKEN**, điền một **mã cài đặt** khó đoán (vd. `blog-2026-mat-ma-rieng`) và **ghi nhớ lại**.
+3. Ở ô **SETUP_TOKEN**, điền một **mã cài đặt** khó đoán (vd. `blog-2026-mat-ma-rieng`) và **ghi nhớ lại**. Ô **SITE_NAME** là tên blog, đổi được sau.
 4. Bấm **Deploy** và chờ 1–2 phút.
 5. Mở địa chỉ `https://<tên-dự-án>.<tài-khoản>.workers.dev/quan-tri`, nhập mã cài đặt và đặt mật khẩu quản trị.
 6. Vào **Cài đặt site** để đổi tên blog, thông tin liên hệ… rồi bắt đầu viết bài.
@@ -35,14 +35,14 @@ Sau này bạn sửa code trong repo GitHub của mình, Cloudflare sẽ tự bu
 Tên miền cần được quản lý DNS trên Cloudflare (thêm tên miền vào Cloudflare và đổi nameserver theo hướng dẫn của Cloudflare).
 
 1. Cloudflare dashboard → **Workers & Pages** → chọn Worker của bạn → **Settings** → **Domains & Routes** → **Add** → **Custom domain** → nhập `tenmien.com`.
-2. Trong repo GitHub của bạn, sửa file `wrangler.jsonc`: đặt `"SITE_URL": "https://tenmien.com"` rồi commit. Site sẽ tự deploy lại; từ đây link trong sitemap, chia sẻ Facebook… dùng tên miền này.
+2. Vào `/quan-tri` → **Cài đặt site** → **Tên miền & Google**, điền `https://tenmien.com` vào ô **Tên miền chính** rồi lưu. Từ đây link trong sitemap, chia sẻ Facebook… dùng tên miền này, và `www.tenmien.com` (nếu có gắn) tự chuyển về tên miền chính.
 
 ## Tên miền cho ảnh: tiết kiệm hạn mức miễn phí (khuyên dùng khi có tên miền)
 
 Gói miễn phí cho 100.000 request Worker mỗi ngày. Mặc định mỗi ảnh cũng đi qua Worker, nên bài có nhiều ảnh sẽ tốn nhiều request. Gắn tên miền riêng cho kho ảnh để ảnh đi thẳng qua CDN của Cloudflare (miễn phí, không giới hạn):
 
 1. Cloudflare dashboard → **R2** → bucket ảnh của bạn → **Settings** → **Custom Domains** → **Connect Domain** → nhập `anh.tenmien.com`.
-2. Sửa `wrangler.jsonc`: đặt `"MEDIA_BASE": "https://anh.tenmien.com"` rồi commit.
+2. Vào **Cài đặt site** → **Tên miền & Google**, điền `https://anh.tenmien.com` vào ô **Tên miền ảnh** rồi lưu.
 
 ## Hạn mức miễn phí
 

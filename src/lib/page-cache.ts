@@ -8,7 +8,7 @@ import type { AppEnv } from '../types'
 // - deploy code mới → mã bản deploy đổi → không dùng lại HTML cũ
 // Bản cũ không cần xoá, tự hết hạn sau CACHE_SECONDS.
 //
-// Mỗi request vẫn đọc 1 dòng settings (rất nhẹ) thay vì 4–6 truy vấn và dựng lại HTML.
+// Số phiên bản được đọc sẵn cùng các cài đặt sớm (lib/early-settings.ts): trúng cache thì không cần thêm truy vấn nào.
 
 const CACHE_SECONDS = 7 * 86400
 
@@ -25,7 +25,7 @@ export const pageCache: MiddlewareHandler<AppEnv> = async (c, next) => {
   const url = new URL(c.req.url)
   if (c.req.method !== 'GET' || url.search || SKIP.test(url.pathname)) return next()
 
-  const version = await c.env.DB.prepare("SELECT value FROM settings WHERE key = 'cache_version'").first<string>('value')
+  const version = c.get('early').cacheVersion
   const deploy = c.env.CF_VERSION_METADATA?.id ?? 'dev'
   const key = new Request(`${url.origin}${url.pathname}?__v=${version ?? 0}-${deploy}`)
   const cache = caches.default
