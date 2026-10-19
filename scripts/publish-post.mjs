@@ -30,6 +30,21 @@ if (!files.length) {
 
 const q = (s) => (s ? `'${s.replaceAll("'", "''")}'` : 'NULL')
 
+// "products: slug-a, slug-b" trong front matter → sản phẩm gợi ý cuối bài (theo thứ tự).
+// Không khai báo thì giữ nguyên lựa chọn đã có (vd. chọn trong trang quản trị).
+function productsSql(meta) {
+  if (meta.products === undefined) return ''
+  const postId = `(SELECT id FROM posts WHERE slug = ${q(meta.slug)})`
+  const slugs = meta.products.split(',').map((s) => s.trim()).filter(Boolean)
+  return [
+    `DELETE FROM post_products WHERE post_id = ${postId};`,
+    ...slugs.map(
+      (s, i) =>
+        `INSERT OR IGNORE INTO post_products (post_id, product_id, position) SELECT ${postId}, id, ${i} FROM products WHERE slug = ${q(s)};`
+    ),
+  ].join('\n')
+}
+
 function toSql(file) {
   const raw = readFileSync(file, 'utf8').replaceAll('\r\n', '\n')
   const match = raw.match(/^---\n([\s\S]*?)\n---\n([\s\S]*)$/)
@@ -65,6 +80,7 @@ ON CONFLICT(slug) DO UPDATE SET
     WHEN posts.content_md IS NOT excluded.content_md OR posts.title IS NOT excluded.title
       OR posts.excerpt IS NOT excluded.excerpt THEN datetime('now')
     ELSE posts.updated_at END;
+${productsSql(meta)}
 -- Khách thấy ngay bản mới (xem src/lib/page-cache.ts)
 INSERT INTO settings (key, value) VALUES ('cache_version', '1')
   ON CONFLICT(key) DO UPDATE SET value = CAST(CAST(value AS INTEGER) + 1 AS TEXT), updated_at = datetime('now');

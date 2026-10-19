@@ -2,7 +2,7 @@ import { Hono } from 'hono'
 import { raw } from 'hono/html'
 import { marked } from 'marked'
 import { PostGrid, ProductGrid } from '../components/Cards'
-import { getPost, listPosts, listProducts } from '../lib/db'
+import { getPost, listPostProducts, listPosts } from '../lib/db'
 import { productsEnabled } from '../lib/site-config'
 import type { AppEnv } from '../types'
 import { formatDate, mediaUrl, withMediaBase } from '../lib/format'
@@ -34,7 +34,7 @@ app.get('/:slug', async (c) => {
 
   const [related, products] = await Promise.all([
     listPosts(c.env.DB, 4, post.category),
-    productsEnabled(c.get('site')) ? listProducts(c.env.DB, post.category) : [],
+    productsEnabled(c.get('site')) ? listPostProducts(c.env.DB, post) : [],
   ])
 
   // Nội dung do quản trị viên viết nên được tin cậy; nếu sau này cho người dùng
@@ -72,7 +72,7 @@ app.get('/:slug', async (c) => {
       {products.length > 0 && (
         <section class="related">
           <h2>Sản phẩm liên quan</h2>
-          <ProductGrid products={products.slice(0, 3)} shop={c.get('site').shop_name} />
+          <ProductGrid products={products} shop={c.get('site').shop_name} />
         </section>
       )}
 

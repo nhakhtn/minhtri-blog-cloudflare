@@ -89,6 +89,23 @@ export async function listProducts(db: D1Database, category?: string): Promise<P
   return results
 }
 
+/** Sản phẩm cuối bài: sản phẩm được chọn cho bài trước, thiếu thì lấy thêm sản phẩm cùng danh mục */
+export async function listPostProducts(db: D1Database, post: { id: number; category: string }, limit = 3) {
+  const [picked, sameCategory] = await Promise.all([
+    db
+      .prepare(
+        `SELECT ${PRODUCT_COLUMNS} FROM products JOIN post_products ON product_id = id
+         WHERE post_id = ? AND active = 1 ORDER BY position`
+      )
+      .bind(post.id)
+      .all<Product>()
+      .then((r) => r.results),
+    listProducts(db, post.category),
+  ])
+  const ids = new Set(picked.map((p) => p.id))
+  return [...picked, ...sameCategory.filter((p) => !ids.has(p.id))].slice(0, limit)
+}
+
 export async function listPostCategories(db: D1Database): Promise<PostCategory[]> {
   const { results } = await db
     .prepare('SELECT id, slug, name, description, sort_order, show_in_menu FROM post_categories ORDER BY sort_order, id')

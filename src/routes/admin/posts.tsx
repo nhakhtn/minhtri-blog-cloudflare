@@ -5,12 +5,15 @@ import {
   adminCreatePost,
   adminDeletePost,
   adminGetPost,
+  adminGetPostProductIds,
+  adminListProductChoices,
   adminListPosts,
+  adminSetPostProducts,
   adminUpdatePost,
   isUniqueError,
 } from '../../lib/admin-db'
-import type { PostCategory } from '../../lib/db'
-import { listPostCategories } from '../../lib/db'
+import type { PostCategory, ProductCategory } from '../../lib/db'
+import { listPostCategories, listProductCategories } from '../../lib/db'
 import { formatDate, mediaUrl } from '../../lib/format'
 import { isValidSlug, slugify } from '../../lib/slug'
 import { AdminShell, Badge, DeleteButton, parseId, readForm } from './ui'
@@ -18,9 +21,51 @@ import { AdminShell, Badge, DeleteButton, parseId, readForm } from './ui'
 const app = new Hono<{ Bindings: CloudflareBindings }>()
 const BASE = '/quan-tri/bai-viet'
 
-type FormValues = Partial<Omit<PostInput, 'content_html'>> & { id?: number }
+type FormValues = Partial<Omit<PostInput, 'content_html'>> & { id?: number; product_ids?: number[] }
+type ProductChoice = Awaited<ReturnType<typeof adminListProductChoices>>[number]
+type FormData = { categories: PostCategory[]; products: ProductChoice[]; productCategories: ProductCategory[] }
 
-const PostForm = ({ values, categories }: { values: FormValues; categories: PostCategory[] }) => (
+const PRODUCT_PREFIX = 'product_'
+
+// Chọn sản phẩm gợi ý cuối bài; không chọn thì tự lấy sản phẩm cùng danh mục
+const ProductPicker = ({ data, selected }: { data: FormData; selected: number[] }) => {
+  const name = (slug: string) => data.productCategories.find((c) => c.slug === slug)?.name ?? slug
+  const groups = [...new Set(data.products.map((p) => p.category))]
+  return (
+    <fieldset class="admin-fieldset">
+      <legend>Sản phẩm gợi ý cuối bài</legend>
+      <p class="muted">
+        Chọn tối đa 3 sản phẩm hợp với nội dung bài. Chọn ít hơn hoặc không chọn thì các ô còn lại tự lấy sản phẩm cùng
+        danh mục với chuyên mục của bài.
+      </p>
+      {groups.map((g) => (
+        <div class="product-picker">
+          <strong>{name(g)}</strong>
+          {data.products
+            .filter((p) => p.category === g)
+            .map((p) => (
+              <label class="checkbox">
+                <input type="checkbox" name={`${PRODUCT_PREFIX}${p.id}`} checked={selected.includes(p.id)} /> {p.name}
+                {!p.active && <span class="muted"> (đang ẩn)</span>}
+              </label>
+            ))}
+        </div>
+      ))}
+      {!data.products.length && <p class="muted">Chưa có sản phẩm nào.</p>}
+    </fieldset>
+  )
+}
+
+async function loadFormData(db: D1Database): Promise<FormData> {
+  const [categories, products, productCategories] = await Promise.all([
+    listPostCategories(db),
+    adminListProductChoices(db),
+    listProductCategories(db),
+  ])
+  return { categories, products, productCategories }
+}
+
+const PostForm = ({ values, data }: { values: FormValues; data: FormData }) => (
   <form method="post" action={values.id ? `${BASE}/${values.id}` : `${BASE}/moi`} class="form admin-form-wide">
     <label>
       Tiêu đề
@@ -34,7 +79,7 @@ const PostForm = ({ values, categories }: { values: FormValues; categories: Post
       <label>
         Chuyên mục
         <select name="category" required>
-          {categories.map((c) => (
+          {data.categories.map((c) => (
             <option value={c.slug} selected={values.category === c.slug}>
               {c.name}
             </option>
@@ -81,6 +126,7 @@ const PostForm = ({ values, categories }: { values: FormValues; categories: Post
       <input type="file" accept="image/*" multiple />
       <span class="upload-status muted"></span>
     </div>
+    <ProductPicker data={data} selected={values.product_ids ?? []} />
     <label class="checkbox">
       <input type="checkbox" name="published" checked={values.published === 1} /> Đăng lên site (bỏ chọn để lưu nháp)
     </label>
@@ -113,8 +159,10 @@ async function parsePostForm(req: Parameters<typeof readForm>[0]) {
   if (!title) error = 'Vui lòng nhập tiêu đề.'
   else if (!isValidSlug(values.slug)) error = 'Đường dẫn chỉ gồm chữ thường không dấu, số và dấu gạch ngang.'
   else if (!content_md) error = 'Vui lòng nhập nội dung.'
+  const product_ids = f.ids(PRODUCT_PREFIX)
+  if (!error && product_ids.length > 3) error = 'Chỉ chọn tối đa 3 sản phẩm gợi ý.'
   if (!error) values.content_html = await marked.parse(content_md)
-  return { values, error }
+  return { values, product_ids, error }
 }
 
 app.get('/', async (c) => {
@@ -172,23 +220,23 @@ app.get('/', async (c) => {
 })
 
 app.get('/moi', async (c) => {
-  const categories = await listPostCategories(c.env.DB)
+  const data = await loadFormData(c.env.DB)
   return c.render(
     <AdminShell title="Viết bài mới" active={BASE}>
-      <PostForm values={{ published: 0, category: categories[0]?.slug }} categories={categories} />
+      <PostForm values={{ published: 0, category: data.categories[0]?.slug }} data={data} />
     </AdminShell>,
     { title: 'Viết bài mới', noindex: true }
   )
 })
 
 app.post('/moi', async (c) => {
-  const { values, error } = await parsePostForm(c.req)
-  const categories = await listPostCategories(c.env.DB)
+  const { values, product_ids, error } = await parsePostForm(c.req)
+  const data = await loadFormData(c.env.DB)
   const fail = (msg: string) => {
     c.status(400)
     return c.render(
       <AdminShell title="Viết bài mới" active={BASE} error={msg}>
-        <PostForm values={values} categories={categories} />
+        <PostForm values={{ ...values, product_ids }} data={data} />
       </AdminShell>,
       { title: 'Viết bài mới', noindex: true }
     )
@@ -196,6 +244,7 @@ app.post('/moi', async (c) => {
   if (error) return fail(error)
   try {
     const id = await adminCreatePost(c.env.DB, values)
+    await adminSetPostProducts(c.env.DB, id, product_ids)
     return c.redirect(`${BASE}/${id}?ok=created`, 303)
   } catch (err) {
     if (isUniqueError(err)) return fail(`Đường dẫn "${values.slug}" đã có bài khác dùng.`)
@@ -207,7 +256,7 @@ app.get('/:id', async (c) => {
   const id = parseId(c.req.param('id'))
   const post = id && (await adminGetPost(c.env.DB, id))
   if (!post) return c.notFound()
-  const categories = await listPostCategories(c.env.DB)
+  const [data, product_ids] = await Promise.all([loadFormData(c.env.DB), adminGetPostProductIds(c.env.DB, post.id)])
   return c.render(
     <AdminShell
       title="Sửa bài viết"
@@ -224,7 +273,7 @@ app.get('/:id', async (c) => {
         </>
       }
     >
-      <PostForm values={post} categories={categories} />
+      <PostForm values={{ ...post, product_ids }} data={data} />
     </AdminShell>,
     { title: `Sửa: ${post.title}`, noindex: true }
   )
@@ -233,13 +282,13 @@ app.get('/:id', async (c) => {
 app.post('/:id', async (c) => {
   const id = parseId(c.req.param('id'))
   if (!id || !(await adminGetPost(c.env.DB, id))) return c.notFound()
-  const { values, error } = await parsePostForm(c.req)
-  const categories = await listPostCategories(c.env.DB)
+  const { values, product_ids, error } = await parsePostForm(c.req)
+  const data = await loadFormData(c.env.DB)
   const fail = (msg: string) => {
     c.status(400)
     return c.render(
       <AdminShell title="Sửa bài viết" active={BASE} error={msg}>
-        <PostForm values={{ ...values, id }} categories={categories} />
+        <PostForm values={{ ...values, id, product_ids }} data={data} />
       </AdminShell>,
       { title: 'Sửa bài viết', noindex: true }
     )
@@ -247,6 +296,7 @@ app.post('/:id', async (c) => {
   if (error) return fail(error)
   try {
     await adminUpdatePost(c.env.DB, id, values)
+    await adminSetPostProducts(c.env.DB, id, product_ids)
     return c.redirect(`${BASE}/${id}?ok=saved`, 303)
   } catch (err) {
     if (isUniqueError(err)) return fail(`Đường dẫn "${values.slug}" đã có bài khác dùng.`)

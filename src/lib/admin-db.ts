@@ -64,8 +64,37 @@ export async function adminUpdatePost(db: D1Database, id: number, p: PostInput) 
     .run()
 }
 
+/** id các sản phẩm đang được gợi ý cho bài, theo thứ tự */
+export async function adminGetPostProductIds(db: D1Database, postId: number) {
+  const { results } = await db
+    .prepare('SELECT product_id FROM post_products WHERE post_id = ? ORDER BY position')
+    .bind(postId)
+    .all<{ product_id: number }>()
+  return results.map((r) => r.product_id)
+}
+
+export async function adminSetPostProducts(db: D1Database, postId: number, productIds: number[]) {
+  await db.batch([
+    db.prepare('DELETE FROM post_products WHERE post_id = ?').bind(postId),
+    ...productIds.map((productId, i) =>
+      db.prepare('INSERT INTO post_products (post_id, product_id, position) VALUES (?, ?, ?)').bind(postId, productId, i)
+    ),
+  ])
+}
+
+/** Sản phẩm để chọn trong form bài viết (gồm cả sản phẩm đang ẩn) */
+export async function adminListProductChoices(db: D1Database) {
+  const { results } = await db
+    .prepare('SELECT id, name, category, active FROM products ORDER BY category, sort_order, id')
+    .all<{ id: number; name: string; category: string; active: number }>()
+  return results
+}
+
 export async function adminDeletePost(db: D1Database, id: number) {
-  await db.prepare('DELETE FROM posts WHERE id = ?').bind(id).run()
+  await db.batch([
+    db.prepare('DELETE FROM post_products WHERE post_id = ?').bind(id),
+    db.prepare('DELETE FROM posts WHERE id = ?').bind(id),
+  ])
 }
 
 // ---------- Chuyên mục bài viết ----------
@@ -182,7 +211,10 @@ export async function adminUpdateProduct(db: D1Database, id: number, p: ProductI
 }
 
 export async function adminDeleteProduct(db: D1Database, id: number) {
-  await db.prepare('DELETE FROM products WHERE id = ?').bind(id).run()
+  await db.batch([
+    db.prepare('DELETE FROM post_products WHERE product_id = ?').bind(id),
+    db.prepare('DELETE FROM products WHERE id = ?').bind(id),
+  ])
 }
 
 // ---------- Danh mục sản phẩm ----------

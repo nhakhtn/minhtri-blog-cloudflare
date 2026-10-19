@@ -85,6 +85,12 @@ export async function readForm(req: { parseBody: () => Promise<Record<string, un
       return Number.isFinite(n) ? n : null
     },
     bool: (k: string) => (f[k] === 'on' || f[k] === '1' ? 1 : 0),
+    /** Các checkbox tên <prefix><id> được chọn → danh sách id, theo thứ tự trong form */
+    ids: (prefix: string) =>
+      Object.keys(f)
+        .filter((k) => k.startsWith(prefix) && (f[k] === 'on' || f[k] === '1'))
+        .map((k) => Number(k.slice(prefix.length)))
+        .filter((n) => Number.isInteger(n) && n > 0),
     /** Giữ xuống dòng (cho textarea) */
     text: (k: string) => (typeof f[k] === 'string' ? (f[k] as string).replace(/\r\n/g, '\n').trim() : ''),
   }
