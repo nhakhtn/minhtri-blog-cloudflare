@@ -14,7 +14,8 @@
     "post:local": "node scripts/publish-post.mjs",
     "post:publish": "node scripts/publish-post.mjs --remote",
     "admin:password": "node scripts/set-admin-password.mjs",
-    "template:export": "node scripts/export-template.mjs"
+    "template:export": "node scripts/export-template.mjs",
+    "post:check": "node scripts/check-post.mjs"
   },
   "dependencies": {
     "hono": "^4.13.13",
