@@ -3,7 +3,7 @@ import { raw } from 'hono/html'
 import { mediaUrl } from '../lib/format'
 import type { Crumb } from '../lib/seo'
 import type { SiteConfig } from '../lib/site-config'
-import { copyrightText, faviconUrl, phoneDisplay, phoneIntl, productsEnabled } from '../lib/site-config'
+import { copyrightText, faviconUrl, isAnalyticsId, phoneDisplay, phoneIntl, productsEnabled } from '../lib/site-config'
 import type { SiteNav } from '../types'
 
 export type SeoProps = {
@@ -91,6 +91,14 @@ export const Layout = (props: Props) => {
         <meta name="twitter:card" content="summary_large_image" />
 
         {props.googleVerification && <meta name="google-site-verification" content={props.googleVerification} />}
+        {isAnalyticsId(site.google_analytics) && !path.startsWith('/quan-tri') && (
+          <>
+            <script async src={`https://www.googletagmanager.com/gtag/js?id=${site.google_analytics}`}></script>
+            {raw(
+              `<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','${site.google_analytics}');</script>`
+            )}
+          </>
+        )}
         <link rel="stylesheet" href={`/css/style.css?v=${props.assetVersion}`} />
         {(props.jsonLd ?? []).map(jsonScript)}
       </head>

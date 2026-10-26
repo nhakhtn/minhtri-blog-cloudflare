@@ -4,7 +4,7 @@ import { setSettings } from '../../lib/auth'
 import { optionalEnv } from '../../lib/early-settings'
 import { mediaUrl } from '../../lib/format'
 import type { SiteConfig } from '../../lib/site-config'
-import { faviconUrl, getSiteConfig } from '../../lib/site-config'
+import { faviconUrl, getSiteConfig, isAnalyticsId } from '../../lib/site-config'
 import { AdminShell, readForm } from './ui'
 
 const app = new Hono<{ Bindings: CloudflareBindings }>()
@@ -199,6 +199,10 @@ const SettingsForm = ({ site, env }: { site: SiteConfig; env: EnvLock }) => (
         <input name="google_verification" maxlength={200} value={site.google_verification} />
         <EnvNote value={env.google} />
       </label>
+      <label>
+        Mã Google Analytics (mã đo lường dạng G-XXXXXXXXXX; để trống sẽ tắt). Không đo trong trang quản trị.
+        <input name="google_analytics" maxlength={30} value={site.google_analytics} placeholder="G-XXXXXXXXXX" />
+      </label>
     </fieldset>
 
     <div class="form-actions">
@@ -257,6 +261,7 @@ app.post('/', async (c) => {
     site_url: f.s('site_url').replace(/\/+$/, ''),
     media_base: f.s('media_base').replace(/\/+$/, ''),
     google_verification: f.s('google_verification'),
+    google_analytics: f.s('google_analytics').toUpperCase(),
   }
   const error = !values.name
     ? 'Vui lòng nhập tên trang web.'
@@ -268,7 +273,9 @@ app.post('/', async (c) => {
           ? 'Link Facebook phải bắt đầu bằng https://'
           : [values.site_url, values.media_base].some((u) => u && !/^https:\/\/[a-z0-9.-]+\.[a-z]{2,}$/i.test(u))
             ? 'Tên miền phải có dạng https://tenmien.com (không có đường dẫn phía sau).'
-            : undefined
+            : values.google_analytics && !isAnalyticsId(values.google_analytics)
+              ? 'Mã Google Analytics phải có dạng G-XXXXXXXXXX.'
+              : undefined
   if (error) {
     c.status(400)
     const site = { ...(await getSiteConfig(c.env.DB, c.env.SITE_NAME)), ...values } as SiteConfig

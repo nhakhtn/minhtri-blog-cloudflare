@@ -32,6 +32,7 @@ export type SiteConfig = {
   site_url: string
   media_base: string
   google_verification: string
+  google_analytics: string
 }
 
 export const DEFAULT_SITE_CONFIG: Omit<SiteConfig, 'name'> = {
@@ -66,6 +67,7 @@ export const DEFAULT_SITE_CONFIG: Omit<SiteConfig, 'name'> = {
   site_url: '',
   media_base: '',
   google_verification: '',
+  google_analytics: '',
 }
 
 export const SITE_CONFIG_KEYS = ['name', ...Object.keys(DEFAULT_SITE_CONFIG)] as (keyof SiteConfig)[]
@@ -86,6 +88,9 @@ export async function getSiteConfig(db: D1Database, fallbackName: string): Promi
 
 export const faviconUrl = (config: Pick<SiteConfig, 'favicon_key'>) =>
   config.favicon_key ? mediaUrl(config.favicon_key) : '/favicon.svg'
+
+/** Mã đo lường Google Analytics 4 hợp lệ, vd. G-ABC123XYZ */
+export const isAnalyticsId = (id: string) => /^G-[A-Z0-9]{4,20}$/.test(id)
 
 export const productsEnabled = (config: Pick<SiteConfig, 'products_enabled'>) => config.products_enabled !== '0'
 
