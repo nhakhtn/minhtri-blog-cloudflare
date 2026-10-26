@@ -89,6 +89,32 @@
     })
   }
 
+  // Chèn video YouTube vào nội dung bài (ảnh bìa + nút ▶, xem js/site.js)
+  const youtubeId = (url) => {
+    const m = String(url).trim().match(/(?:youtu\.be\/|[?&]v=|\/(?:embed|shorts|live)\/)([\w-]{11})/)
+    return m ? m[1] : /^[\w-]{11}$/.test(String(url).trim()) ? String(url).trim() : null
+  }
+  const escapeHtml = (s) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c])
+  for (const button of document.querySelectorAll('[data-insert-youtube]')) {
+    button.addEventListener('click', () => {
+      const textarea = document.querySelector(`[name="${button.dataset.insertYoutube}"]`)
+      const id = youtubeId(prompt('Dán link video YouTube:') || '')
+      if (!textarea || !id) return
+      const title = escapeHtml((prompt('Tên video (hiện dưới video):') || 'Video').trim())
+      const channel = escapeHtml((prompt('Tên kênh YouTube (để ghi nguồn):') || '').trim())
+      insertAtCursor(
+        textarea,
+        `<figure class="video">
+  <a class="yt-lite" href="https://www.youtube.com/watch?v=${id}" data-yt="${id}" target="_blank" rel="noopener">
+    <img src="https://i.ytimg.com/vi/${id}/hqdefault.jpg" alt="${title}" loading="lazy">
+    <span class="yt-play" aria-hidden="true"></span>
+  </a>
+  <figcaption>${title}<small>Video: ${channel ? channel + ' / ' : ''}YouTube</small></figcaption>
+</figure>`
+      )
+    })
+  }
+
   // Nút sao chép (thư viện ảnh)
   document.addEventListener('click', async (e) => {
     const btn = e.target.closest('[data-copy]')

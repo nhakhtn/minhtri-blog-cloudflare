@@ -126,6 +126,12 @@ const PostForm = ({ values, data }: { values: FormValues; data: FormData }) => (
       <input type="file" accept="image/*" multiple />
       <span class="upload-status muted"></span>
     </div>
+    <div class="upload-widget">
+      <button type="button" class="btn btn-outline btn-sm" data-insert-youtube="content_md">
+        Chèn video YouTube
+      </button>
+      <span class="muted">dán link video, khách bấm vào ảnh bìa mới tải trình phát</span>
+    </div>
     <ProductPicker data={data} selected={values.product_ids ?? []} />
     <label class="checkbox">
       <input type="checkbox" name="published" checked={values.published === 1} /> Đăng lên site (bỏ chọn để lưu nháp)

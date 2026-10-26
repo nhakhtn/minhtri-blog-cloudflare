@@ -138,6 +138,12 @@ time { color: var(--muted); font-size: 0.88rem; }
 .prose figure { margin: 28px 0; }
 .prose figure img { display: block; width: 100%; border-radius: 10px; background: var(--border); }
 .prose figure.narrow { max-width: 420px; margin-inline: auto; }
+/* Video YouTube: ảnh bìa + nút ▶ (js/site.js thay bằng trình phát khi bấm) */
+.prose .yt-lite, .prose figure.video iframe { position: relative; display: block; width: 100%; aspect-ratio: 16 / 9; border: 0; border-radius: 10px; overflow: hidden; background: #000; }
+.prose .yt-lite img { width: 100%; height: 100%; object-fit: cover; border-radius: 0; opacity: 0.92; transition: opacity 0.2s; }
+.prose .yt-lite:hover img { opacity: 1; }
+.yt-play { position: absolute; left: 50%; top: 50%; width: 68px; height: 48px; transform: translate(-50%, -50%); border-radius: 14px; background: #e62117; box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35); }
+.yt-play::after { content: ''; position: absolute; left: 27px; top: 14px; border-style: solid; border-width: 10px 0 10px 17px; border-color: transparent transparent transparent #fff; }
 .prose figcaption { margin-top: 8px; font-size: 0.92rem; color: var(--muted); line-height: 1.5; }
 .prose figcaption small { display: block; margin-top: 2px; font-size: 0.8rem; opacity: 0.85; }
 .prose figcaption a { color: inherit; }
