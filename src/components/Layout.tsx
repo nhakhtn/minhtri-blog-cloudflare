@@ -101,7 +101,12 @@ export const Layout = (props: Props) => {
               <img src={icon} alt="" width="34" height="34" />
               {siteName}
             </a>
-            <nav class="main-nav" aria-label="Menu chính">
+            <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="main-nav" aria-label="Mở menu">
+              <span></span>
+              <span></span>
+              <span></span>
+            </button>
+            <nav class="main-nav" id="main-nav" aria-label="Menu chính">
               {menuItems(props.nav, site).map((item) => {
                 const active =
                   item.href === props.section || (item.href === '/' ? path === '/' : path.startsWith(item.href))
@@ -153,6 +158,7 @@ export const Layout = (props: Props) => {
             {copyrightText(site)}
           </div>
         </footer>
+        <script src={`/js/site.js?v=${props.assetVersion}`} defer></script>
       </body>
     </html>
   )
