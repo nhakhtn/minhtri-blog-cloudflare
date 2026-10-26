@@ -73,6 +73,8 @@ export const Layout = (props: Props) => {
       <head>
         <meta charset="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
+        {/* Đánh dấu có JavaScript trước khi vẽ trang, để menu điện thoại hiện đúng dạng ☰ ngay từ đầu (không giật) */}
+        {raw(`<script>document.documentElement.classList.add('js')</script>`)}
         <title>{fullTitle}</title>
         {description && <meta name="description" content={description} />}
         {props.noindex && <meta name="robots" content="noindex" />}

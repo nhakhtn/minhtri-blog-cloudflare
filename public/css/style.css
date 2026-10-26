@@ -35,16 +35,16 @@ img { max-width: 100%; height: auto; }
   .main-nav { width: 100%; overflow-x: auto; scrollbar-width: none; margin: 0 -16px; padding: 0 16px 2px; }
   .main-nav::-webkit-scrollbar { display: none; }
   .main-nav a { padding: 7px 12px; font-size: 0.95rem; }
-  /* Có JavaScript (js/site.js): nút ☰ mở menu thả xuống */
-  .has-nav-toggle .container { min-height: 60px; flex-wrap: wrap; }
-  .has-nav-toggle .nav-toggle { display: inline-flex; flex-direction: column; justify-content: center; gap: 5px; width: 44px; height: 44px; padding: 0 11px; border: 1px solid var(--border); border-radius: 10px; background: #fff; cursor: pointer; }
+  /* Có JavaScript (lớp .js gắn trong <head>): nút ☰ mở menu thả xuống */
+  .js .site-header .container { min-height: 60px; flex-wrap: wrap; }
+  .js .site-header .nav-toggle { display: inline-flex; flex-direction: column; justify-content: center; gap: 5px; width: 44px; height: 44px; padding: 0 11px; border: 1px solid var(--border); border-radius: 10px; background: #fff; cursor: pointer; }
   .nav-toggle span { display: block; height: 2px; border-radius: 2px; background: var(--honey-dark); transition: transform 0.2s, opacity 0.2s; }
   .nav-open .nav-toggle span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
   .nav-open .nav-toggle span:nth-child(2) { opacity: 0; }
   .nav-open .nav-toggle span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
-  .has-nav-toggle .main-nav { display: none; flex-direction: column; gap: 2px; margin: 0; padding: 4px 0 10px; overflow: visible; border-top: 1px solid var(--border); }
-  .has-nav-toggle.nav-open .main-nav { display: flex; }
-  .has-nav-toggle .main-nav a { padding: 12px 14px; border-radius: 10px; font-size: 1.05rem; }
+  .js .site-header .main-nav { display: none; flex-direction: column; gap: 2px; margin: 0; padding: 4px 0 10px; overflow: visible; border-top: 1px solid var(--border); }
+  .js .site-header.nav-open .main-nav { display: flex; }
+  .js .site-header .main-nav a { padding: 12px 14px; border-radius: 10px; font-size: 1.05rem; }
 }
 
 /* main.container: .container đặt padding 0 16px nên phải ghi đè với độ ưu tiên cao hơn */
