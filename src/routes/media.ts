@@ -4,7 +4,13 @@ const app = new Hono<{ Bindings: CloudflareBindings }>()
 
 // Phục vụ ảnh từ R2: /media/<key>
 app.get('/*', async (c) => {
-  const key = decodeURIComponent(new URL(c.req.url).pathname.replace(/^\/media\//, ''))
+  let key: string
+  try {
+    key = decodeURIComponent(new URL(c.req.url).pathname.replace(/^\/media\//, ''))
+  } catch {
+    // Link hỏng (mã hoá % sai): báo không tìm thấy thay vì lỗi 500
+    return c.notFound()
+  }
   if (!key) return c.notFound()
 
   const object = await c.env.MEDIA.get(key, {
